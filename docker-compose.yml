@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: NearBite-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: nearbite
+    ports:
+      - "5433:5432"
+    volumes:
+      - recall_pgdata:/var/lib/postgresql/data
+
+volumes:
+  recall_pgdata:
