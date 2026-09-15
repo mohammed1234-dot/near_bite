@@ -3,13 +3,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import { eq } from 'drizzle-orm';
-
-import { DatabaseService } from '../database/database.service.js';
-import {
-  products,
-  vendors,
-} from '../database/schema.js';
+import { ProductsRepository } from './products.repository.js';
+import { NewProducts } from '../database/schema.js';
 
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
@@ -17,7 +12,7 @@ import { UpdateProductDto } from './dto/update-product.dto.js';
 @Injectable()
 export class ProductsService {
   constructor(
-    private readonly database: DatabaseService,
+    private readonly productsRepository: ProductsRepository,
   ) {}
 
   async create(createProductDto: CreateProductDto) {
@@ -29,39 +24,27 @@ export class ProductsService {
     } = createProductDto;
 
     // Make sure the vendor exists
-    const [vendor] = await this.database.db
-      .select()
-      .from(vendors)
-      .where(eq(vendors.id, vendorId));
-
-    if (!vendor) {
+    const vendorExists = await this.productsRepository.vendorExists(vendorId);
+    if (!vendorExists) {
       throw new NotFoundException('Vendor not found');
     }
 
-    const [product] = await this.database.db
-      .insert(products)
-      .values({
-        vendorId,
-        name,
-        price,
-        description,
-      })
-      .returning();
+    const [product] = await this.productsRepository.create({
+      vendorId,
+      name,
+      price,
+      description,
+    });
 
     return product;
   }
 
   async findAll() {
-    return await this.database.db
-      .select()
-      .from(products);
+    return await this.productsRepository.findAll();
   }
 
   async findOne(id: number) {
-    const [product] = await this.database.db
-      .select()
-      .from(products)
-      .where(eq(products.id, id));
+    const [product] = await this.productsRepository.findById(id);
 
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -71,10 +54,7 @@ export class ProductsService {
   }
 
   async findByVendor(vendorId: number) {
-    return await this.database.db
-      .select()
-      .from(products)
-      .where(eq(products.vendorId, vendorId));
+    return await this.productsRepository.findByVendor(vendorId);
   }
 
   async update(
@@ -90,22 +70,15 @@ export class ProductsService {
       description,
     } = updateProductDto;
 
-    // If vendorId is being changed,
-    // make sure the new vendor exists.
+    // If vendorId is being changed, make sure the new vendor exists.
     if (vendorId !== undefined) {
-      const [vendor] = await this.database.db
-        .select()
-        .from(vendors)
-        .where(eq(vendors.id, vendorId));
-
-      if (!vendor) {
+      const vendorExists = await this.productsRepository.vendorExists(vendorId);
+      if (!vendorExists) {
         throw new NotFoundException('Vendor not found');
       }
     }
 
-    const updateData: Partial<
-      typeof products.$inferInsert
-    > = {};
+    const updateData: Partial<NewProducts> = {};
 
     if (vendorId !== undefined) {
       updateData.vendorId = vendorId;
@@ -123,11 +96,7 @@ export class ProductsService {
       updateData.description = description;
     }
 
-    const [product] = await this.database.db
-      .update(products)
-      .set(updateData)
-      .where(eq(products.id, id))
-      .returning();
+    const [product] = await this.productsRepository.update(id, updateData);
 
     return product;
   }
@@ -135,10 +104,7 @@ export class ProductsService {
   async remove(id: number) {
     await this.findOne(id);
 
-    const [product] = await this.database.db
-      .delete(products)
-      .where(eq(products.id, id))
-      .returning();
+    const [product] = await this.productsRepository.delete(id);
 
     return product;
   }
