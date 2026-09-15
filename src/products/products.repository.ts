@@ -52,8 +52,6 @@ export class ProductsRepository {
       .returning();
   }
 
-  // Used by ProductsService to validate a vendorId before create/update,
-  // without ProductsService needing to know about the vendors table directly.
   async vendorExists(vendorId: number) {
     const [vendor] = await this.database.db
       .select()
