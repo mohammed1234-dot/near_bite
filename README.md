@@ -60,9 +60,6 @@ npm run start:prod	Run the compiled build
 npm run db:generate	Generate a Drizzle migration from the schema
 npm run db:migrate	Apply pending migrations
 npm run db:studio	Open Drizzle Studio to browse the database
-npm run test	Run unit tests
-npm run test:e2e	Run end-to-end tests
-npm run test:cov	Run tests with coverage
 npm run lint	Lint with oxlint
 npm run format	Format with Prettier
 Data model
@@ -131,14 +128,6 @@ This keeps each request's cost proportional to the candidate set, not to the tot
 Testing
 
 A Postman collection is included (see NearBite.postman_collection.json) covering registration, login, admin vendor/product management, and the Home API with and without an explicit location.
-
-bash
-npm run test        # unit tests
-npm run test:e2e    # end-to-end tests
-npm run test:cov    # coverage report
-Deployment
-
-When you're ready to deploy to production, check out NestJS's deployment documentation for guidance on running it efficiently. Mau, NestJS's official platform for deploying on AWS, is one option:
 
 bash
 npm install -g @nestjs/mau
