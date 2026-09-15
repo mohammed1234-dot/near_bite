@@ -1,114 +1,152 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+<p align="center"> <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a> </p> <h1 align="center">NearBite</h1> <p align="center">A Talabat-style food-delivery backend built around the "find vendors near me" problem — the proximity service from <em>System Design Interview, Vol. 2</em> (Alex Xu), Chapter 1.</p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Given a customer's location and a radius, the Home API returns nearby vendors sorted by distance — without scanning the entire vendors table on every request. It does this by encoding each vendor's location as a geohash, then narrowing to a small candidate set via a geohash prefix match before running an exact Haversine distance calculation on that small set.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Built with NestJS, a progressive Node.js framework for building efficient, scalable server-side applications.
 
-## Description
+Stack
+NestJS (Express platform)
+PostgreSQL + Drizzle ORM
+JWT auth (jsonwebtoken), roles via a custom guard
+class-validator / class-transformer for request validation
+ngeohash for geohash encoding and neighbor lookup
+Docker Compose for local Postgres
+Vitest for tests
+Getting started
+1. Start Postgres
+bash
+docker compose up -d
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This starts a Postgres 16 container on localhost:5433, database nearbite.
 
-## Project setup
+2. Configure environment
 
-```bash
-$ npm install
-```
+Copy .env.example to .env (or edit .env directly) and set:
 
-## Compile and run the project
-
-```bash
+Variable	Description
+NODE_ENV	development / production
+PORT	API port (defaults to 3000)
+DATABASE_URL	Postgres connection string, e.g. postgres://postgres:postgres@localhost:5433/nearbite
+JWT_SECRET	Secret used to sign JWTs
+JWT_EXPIRES_IN	Token lifetime, e.g. 1h
+MAX_RADIUS_METERS	Upper bound accepted by the Home API's radius query param
+DEFAULT_GEOHASH_PRECISION	Fallback geohash precision when not derived from radius
+HOME_CACHE_TTL_SECONDS	TTL for the Home API's cache-aside layer
+3. Install dependencies
+bash
+npm install
+4. Run migrations
+bash
+npm run db:generate   # generate migration from schema.ts
+npm run db:migrate    # apply migrations to the database
+5. Compile and run
+bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
-```
+npm run start:prod
 
-## Run tests
+The API listens on http://localhost:3000 (or your configured PORT).
 
-```bash
-# unit tests
-$ npm run test
+Scripts
+Script	Purpose
+npm run start:dev	Start with hot reload
+npm run build	Compile to dist/
+npm run start:prod	Run the compiled build
+npm run db:generate	Generate a Drizzle migration from the schema
+npm run db:migrate	Apply pending migrations
+npm run db:studio	Open Drizzle Studio to browse the database
+npm run test	Run unit tests
+npm run test:e2e	Run end-to-end tests
+npm run test:cov	Run tests with coverage
+npm run lint	Lint with oxlint
+npm run format	Format with Prettier
+Data model
 
-# e2e tests
-$ npm run test:e2e
+users — id, name, email, passwordHash, role ('admin' | 'customer'), lat, lng, createdAt
 
-# test coverage
-$ npm run test:cov
-```
+vendors — id, name, logoUrl, lat, lng, geoHash, createdBy, createdAt
 
-## Deployment
+products — id, vendorId, name, price (cents), description, createdAt
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+API reference
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+All protected routes require Authorization: Bearer <token>.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Auth
+Method	Path	Body	Notes
+POST	/users/register	{ name, email, password, lat, lng }	Creates a customer
+POST	/users/login	{ email, password }	Returns { token }
+Vendors (admin-only writes)
+Method	Path	Body	Auth
+POST	/vendors	{ name, logoUrl, lat, lng }	admin
+GET	/vendors	—	public
+GET	/vendors/:id	—	public
+PUT	/vendors/:id	{ name?, logoUrl?, lat?, lng? }	admin
+DELETE	/vendors/:id	—	admin
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Creating or moving a vendor recomputes and stores its geohash.
 
-## Observability
+Products (admin-only writes)
+Method	Path	Body	Auth
+POST	/products	{ vendorId, name, price, description }	admin
+GET	/products	—	public
+GET	/products/:id	—	public
+PATCH	/products/:id	{ ... }	admin
+DELETE	/products/:id	—	admin
+Home — the proximity service
+GET /home?lat=<lat>&lng=<lng>&radius=<meters>&limit=20&cursor=<id>
+Authorization: Bearer <token>
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+Returns the nearest vendors within radius meters, sorted by distance, paginated by cursor.
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+lat / lng are optional — if omitted, the caller's saved location is used.
+radius is capped (see MAX_RADIUS_METERS) so an unbounded radius can't force a full scan.
+json
+{
+  "vendors": [
+    {
+      "id": 42,
+      "name": "Koshary El Tahrir",
+      "logoUrl": "https://…",
+      "lat": 30.0444,
+      "lng": 31.2357,
+      "distanceMeters": 320
+    }
+  ],
+  "nextCursor": null
+}
+How the proximity search works
+Compute a geohash for the query point, at a precision chosen from the requested radius.
+Query vendors whose geoHash matches that cell or one of its 8 neighbors (covers results that sit just across a cell boundary) — an indexed prefix match, not a table scan.
+Run the exact Haversine distance formula only on that small candidate set.
+Filter to radius, sort by distance, and paginate with a cursor.
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+This keeps each request's cost proportional to the candidate set, not to the total number of vendors — the difference between an approach that degrades gracefully as the marketplace grows and one that doesn't.
 
-## Resources
+Testing
 
-Check out a few resources that may come in handy when working with NestJS:
+A Postman collection is included (see NearBite.postman_collection.json) covering registration, login, admin vendor/product management, and the Home API with and without an explicit location.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+bash
+npm run test        # unit tests
+npm run test:e2e    # end-to-end tests
+npm run test:cov    # coverage report
+Deployment
 
-## Support
+When you're ready to deploy to production, check out NestJS's deployment documentation for guidance on running it efficiently. Mau, NestJS's official platform for deploying on AWS, is one option:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+bash
+npm install -g @nestjs/mau
+mau deploy
+Resources
+NestJS Documentation
+NestJS Discord
+Drizzle ORM Documentation
+License
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+UNLICENSED — private pro
