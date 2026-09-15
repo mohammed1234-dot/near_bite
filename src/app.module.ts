@@ -7,7 +7,8 @@ import { VendorsModule } from './vendors/vendors.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HomeModule } from './home/home.module.js';
-import { DatabaseModule } from './database/database.module.js'; // add this
+import { DatabaseModule } from './database/database.module.js'; 
+import { RedisModule } from './redis/redis.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -18,7 +19,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ProductsModule,
     AuthModule,
     HomeModule,
-    DatabaseModule, // add this
+    DatabaseModule,
+    RedisModule ,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,11 +7,11 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 
 import { VendorsService } from './vendors.service.js';
-
 import { CreateVendorDto } from './dto/create-vendor.dto.js';
 import { UpdateVendorDto } from './dto/update-vendor.dto.js';
 
@@ -31,9 +31,11 @@ export class VendorsController {
   @Post()
   create(
     @Body() createVendorDto: CreateVendorDto,
+    @Request() req: any,
   ) {
     return this.vendorsService.create(
       createVendorDto,
+      req.user.id,
     );
   }
 
@@ -42,7 +44,6 @@ export class VendorsController {
   findAll() {
     return this.vendorsService.findAll();
   }
-
 
   // PUBLIC
   @Get(':id')
